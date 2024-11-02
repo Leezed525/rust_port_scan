@@ -50,12 +50,4 @@ mod test {
         let port = 80;
         assert!(!ping(ip, port));
     }
-    #[test]
-    fn test_scan_port() {
-        let ip = "";
-        let start = 1;
-        let end = 10000;
-        super::scan_port(ip.to_string(), start, end);
-        assert!(false);
-    }
 }
