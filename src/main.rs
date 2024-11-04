@@ -1,7 +1,10 @@
 use port_scanner::scanner;
+use port_scanner::parser;
+use std::env;
+use std::collections::vec_deque;
+use port_scanner::parser::Parser;
+
 fn main() {
-    let ip = "";
-    let start = 35440;
-    let end = 40000;
-    scanner::scan_port(ip.to_string(), start, end);
+
+    // scanner::scan_port(ip.get_value(), start, end);
 }
