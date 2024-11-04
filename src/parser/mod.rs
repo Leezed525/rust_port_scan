@@ -1,7 +1,11 @@
+mod config;
+
 use std::cmp::PartialEq;
 use std::env;
 use std::collections;
 use std::fmt::{Display, Formatter};
+
+pub use config::ScannerConfig;
 
 enum ParserType {
     String,

@@ -1,10 +1,14 @@
+use clap::Parser;
 use port_scanner::scanner;
 use port_scanner::parser;
-use std::env;
-use std::collections::vec_deque;
-use port_scanner::parser::Parser;
 
 fn main() {
+    let args = parser::ScannerConfig::parse();
 
-    // scanner::scan_port(ip.get_value(), start, end);
+    println!("Hello {}!", args.ip);
+    println!("Hello {}!", args.begin);
+    println!("Hello {}!", args.end);
+
+
+    scanner::scan_port(args.ip, args.begin, args.end);
 }
