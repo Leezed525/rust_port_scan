@@ -12,4 +12,7 @@ pub struct ScannerConfig {
 
     #[clap(short, long, default_value_t = 443)]
     pub end: u16,
+
+    #[clap(short, long, default_value_t = 100)]
+    pub dura: u64,
 }
