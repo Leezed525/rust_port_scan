@@ -49,6 +49,33 @@ pub fn scan_port(ip: String, start: u16, end: u16, dura: u64) {
     }
 }
 
+pub async fn scan_port_async(ip: String, start: u16, end: u16, dura: u64) {
+    //判断ip类型
+    if !check_ipv4_valid(&ip) {
+        println!("Invalid IP address {}", ip);
+        return;
+    }
+    for port in start..end {
+        let start = Instant::now();
+
+        match async_ping(&ip, port, dura) {
+            Ok(stream) => {
+                println!("{}:{} is open", ip, port);
+                stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+            }
+            Err(_) => println!("{}:{} is closed", ip, port),
+        };
+
+        // if ping(&ip, port, dura) {
+        //     println!("{}:{} is open", ip, port);
+        // } else {
+        //     println!("{}:{} is closed", ip, port);
+        // }
+
+        debug!("Time elapsed: {:?}", start.elapsed());
+    }
+}
+
 
 async fn async_ping(ip: &str, port: u16, dura: u64) -> async_io::Result<async_net::TcpStream> {
     let timeout = Duration::from_millis(dura);
