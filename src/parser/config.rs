@@ -15,4 +15,7 @@ pub struct ScannerConfig {
 
     #[clap(short, long, default_value_t = 100)]
     pub dura: u64,
+
+    #[clap(short, long, default_value = "sync")]
+    pub scan_type: String,
 }
