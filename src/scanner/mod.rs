@@ -73,7 +73,8 @@ pub async fn scan_port_async(ip: String, start: u16, end: u16, dura: u64) {
                 println!("{}:{} is open", ip, port);
                 stream.shutdown(Shutdown::Both).expect("shutdown call failed");
             }
-            Err(_) => println!("{}:{} is closed", ip, port),
+            Err(_) => (),
+            // Err(_) => println!("{}:{} is closed", ip, port),
         };
     }
 
