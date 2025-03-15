@@ -50,13 +50,15 @@ pub fn scan_port_sync(ip: String, start: u16, end: u16, dura: u64) {
 
 
 //创建异步tcp连接
-async fn async_ping(ip: &str, port: u16, dura: u64, semaphore: Arc<Semaphore>) -> async_io::Result<async_net::TcpStream> {
+async fn async_ping(ip: &str, port: u16, dura: u64, semaphore: Arc<Semaphore>) -> Result<String,std::io::Error> {
     //设置并发量
     let _permit = semaphore.acquire().await.unwrap();
     let timeout = Duration::from_millis(dura);
     let socket = net::SocketAddr::new(ip.parse().unwrap(), port);
     let stream = async_io::timeout(timeout, async_net::TcpStream::connect(socket)).await?;
-    Ok(stream)
+    //关闭连接
+    stream.shutdown(Shutdown::Both).expect("shutdown call failed");
+    Ok("success".to_string())
 }
 
 pub async fn scan_port_async(ip: String, start: u16, end: u16, dura: u64, max_concurrent: usize) {
@@ -71,25 +73,23 @@ pub async fn scan_port_async(ip: String, start: u16, end: u16, dura: u64, max_co
     let mut ping_tasks = Vec::new();
     for port in start..end {
         let semaphore = Arc::clone(&semaphore);
-        ping_tasks.push(async_ping(&ip, port, dura,semaphore));
+        ping_tasks.push(async_ping(&ip, port, dura, semaphore));
     }
     println!("{:?}", ping_tasks.len());
     println!("Start to scan");
-    let results: Vec<Result<async_net::TcpStream, async_io::Error>> = join_all(ping_tasks).await;
+    let results = join_all(ping_tasks).await;
     println!("Time elapsed: {:?}", time.elapsed());
     let mut mp = HashMap::new();
     for (port, result) in (start..end).zip(results) {
         match result {
-            Ok(stream) => {
+            Ok(string) => {
                 println!("{}:{} is open", ip, port);
-                stream.shutdown(Shutdown::Both).expect("shutdown call failed");
             }
             Err(E) => {
                 //输出错误信息
                 let count = mp.entry(E.to_string()).or_insert(0);
                 *count += 1;
             }
-            // Err(_) => println!("{}:{} is closed", ip, port),
         };
     }
 
