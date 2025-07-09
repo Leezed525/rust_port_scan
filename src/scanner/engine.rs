@@ -48,14 +48,29 @@ impl AsyncScannerEngine {
         }
     }
 
-    pub fn run(&self, dura: u64) {
+    pub fn run(&mut self, dura: u64) {
+
         let mut tasks = Vec::new();
         // 直接遍历 self.executors 的引用
-        for executor in &self.executors {
+        for executor in &mut self.executors {
             tasks.push(executor.execute(dura));
         }
+        println!("开始扫描 {}:{}-{}", self.ip, self.begin, self.end);
         // 等待所有任务完成
         futures::executor::block_on(futures::future::join_all(tasks));
-        println!("扫描完成");
+        //获取扫描结果
+        let mut res = Vec::new();
+        for executor in &self.executors {
+            res.extend(executor.get_results());
+        }
+
+        //排序
+        res.sort_unstable();
+        //输出结果
+        for port in &res {
+            println!("{}:{} is open", self.ip, port);
+        }
+
+        println!("共找到 {} 个开放端口", &res.len());
     }
 }

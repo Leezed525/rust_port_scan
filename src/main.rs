@@ -18,7 +18,7 @@ async fn main() {
 
     //计算消耗的时间
     let start_time = Instant::now();
-    let engine = engine::AsyncScannerEngine::new(&args.ip, args.begin, args.end, args.max_concurrent);
+    let mut engine = engine::AsyncScannerEngine::new(&args.ip, args.begin, args.end, args.max_concurrent);
     engine.run(args.dura);
     let elapsed_time = start_time.elapsed();
     println!("扫描完成，耗时: {:?}", elapsed_time);

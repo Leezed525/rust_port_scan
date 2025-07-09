@@ -19,6 +19,6 @@ pub struct ScannerConfig {
     #[clap(short, long, default_value = "sync")]
     pub scan_type: String,
 
-    #[clap(short, long, default_value_t = 900)]
+    #[clap(short, long, default_value_t = 768)]
     pub max_concurrent: usize,
 }
