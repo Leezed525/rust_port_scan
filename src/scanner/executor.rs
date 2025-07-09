@@ -1,6 +1,7 @@
 use std::net::IpAddr;
 use async_std::io as async_io;
 use log::debug;
+use rand::Rng; // 需要在 Cargo.toml 中添加 rand = "0.8"
 
 pub struct AsyncScanExecutor {
     ip: IpAddr,
@@ -34,6 +35,10 @@ impl AsyncScanExecutor {
                     }
                 }
             }
+            // !!! 在这里添加随机延迟 !!!
+            let mut rng = rand::thread_rng();
+            let delay_ms = rng.gen_range(10..=100); // 例如，随机延迟 10 到 100 毫秒
+            async_std::task::sleep(std::time::Duration::from_millis(delay_ms)).await;
         }
     }
 

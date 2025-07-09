@@ -10,18 +10,20 @@
 
 ```rust
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
-    let mut ping_tasks = Vec::new();
-    for port in start..end {
-        let semaphore = Arc::clone(&semaphore);
-        ping_tasks.push(async_ping(&ip, port, dura, semaphore));
-    }
-    println!("{:?}", ping_tasks.len());
-    println!("Start to scan");
-    let results = join_all(ping_tasks).await;
+let mut ping_tasks = Vec::new();
+for port in start..end {
+let semaphore = Arc::clone( & semaphore);
+ping_tasks.push(async_ping( & ip, port, dura, semaphore));
+}
+println!("{:?}", ping_tasks.len());
+println!("Start to scan");
+let results = join_all(ping_tasks).await;
 ```
+
 #### 问题
 
 但是在目前这种方法中，一旦请求的端口数过多，
+
 1. 会导致创建太多的线程，消耗过多的系统资源。
 2. 会导致请求的端口数过多，导致请求超时。
 3. 请求的端口一下子太多了，导致本地的网络连接数过多，导致请求失败。
@@ -30,3 +32,43 @@
 
 目前打算重新设计，采用任务分化的思想，
 将端口分成若干个小组，每个小组的端口数不超过最大并发数，然后每个小组使用一个线程进行探测。
+
+# 20250709
+
+目前任务池划分的方法已经成功了，但是问题如下
+
+| 并发数  | duration | 每个线程扫描的数量 | 问题       | 时间     |
+|------|----------|-----------|----------|--------|
+| 512  | 2000     | 128       | 能够全部检测出来 | 256秒出头 |
+| 512  | 1500     | 128       | 能够全部检测出来 | 192秒出头 |
+| 512  | 1000     | 128       | 漏检       | 128秒出头 |
+| 1024 | 2000     | 64        | 漏检       | 128秒出头 |
+
+按照经验而言，对于duration为2000的情况，应该不会漏检duankou ,但是实际测试中漏检了。
+
+怀疑是防火墙的问题，决定加点随机延迟
+
+1. 在每个线程中添加随机延迟，避免请求过于集中导致的防火墙拦截。
+
+```rust
+// !!! 在这里添加随机延迟 !!!
+let mut rng = rand::thread_rng();
+let delay_ms = rng.gen_range(10..=100); // 例如，随机延迟 10 到 100 毫秒
+async_std::task::sleep(std::time::Duration::from_millis(delay_ms)).await;
+```
+
+没有解决问题，但还是保留了这部分代码
+
+2. 查询服务器发现net.ipv4.tcp_max_syn_backlog = 1024 ，也就是说
+   服务器端的SYN队列长度是1024，可能会导致请求过多时，SYN包被丢弃。
+
+所以我设置了并发数为1024的情况下，除了我自身的端口扫描外，加上另外的对于我服务器的请求已经超过了
+服务器的并发请求限制，就是相当于我对我的服务器发起了一次ddos。。。。
+
+在不修改服务器参数的情况下，限制并发数进行尝试
+
+| 并发数 | duration | 每个线程扫描的数量 | 问题       | 时间     |
+|-----|----------|-----------|----------|--------|
+| 900 | 2000     | 73        | 漏检       | 151秒出头 |
+| 768 | 2000     | 86        | 能够全部检测出来 | 177秒出头 |
+| 768 | 1500     | 86        | 漏检       | 134秒出头 |

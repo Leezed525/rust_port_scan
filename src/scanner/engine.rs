@@ -26,14 +26,17 @@ impl AsyncScannerEngine {
         let mut executors = Vec::new();
         let port_range = end - begin + 1;
         let ports_per_executor = (port_range as f64 / max_concurrent as f64).ceil() as u16;
-        for i in 0..max_concurrent {
-            let start_port = begin + i as u16 * ports_per_executor;
-            let end_port = if i == max_concurrent - 1 {
-                end
-            } else {
-                start_port + ports_per_executor - 1
-            };
+        println!("每个执行器处理端口数: {}", ports_per_executor);
+
+        let mut start_port = begin;
+        let mut end_port = begin + ports_per_executor - 1;
+        while end_port <= end {
             executors.push(AsyncScanExecutor::new(ip, start_port, end_port));
+            if end_port == end {
+                break; // 如果已经到达端口范围的末尾，则退出循环
+            }
+            start_port = end_port + 1;
+            end_port = start_port.checked_add(ports_per_executor - 1).unwrap_or(end);
         }
 
         AsyncScannerEngine {
