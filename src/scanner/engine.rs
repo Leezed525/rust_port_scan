@@ -45,15 +45,14 @@ impl AsyncScannerEngine {
         }
     }
 
-    pub fn run(self, dura: u64) {
-        // 异步执行所有扫描任务
-        let executors = Arc::new(self.executors);
+    pub fn run(&self, dura: u64) {
         let mut tasks = Vec::new();
-        for executor in executors.iter() {
+        // 直接遍历 self.executors 的引用
+        for executor in &self.executors {
             tasks.push(executor.execute(dura));
         }
-
         // 等待所有任务完成
         futures::executor::block_on(futures::future::join_all(tasks));
+        println!("扫描完成");
     }
 }

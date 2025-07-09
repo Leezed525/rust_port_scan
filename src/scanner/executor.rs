@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 use async_std::io as async_io;
+use log::debug;
 
 pub struct AsyncScanExecutor {
     ip: IpAddr,
@@ -19,7 +20,19 @@ impl AsyncScanExecutor {
         for &port in &self.port_list {
             match self.ping(port, dura).await {
                 Ok(_) => println!("{}:{} is open", self.ip, port),
-                Err(_) => println!("{}:{} is closed", self.ip, port),
+                Err(e) => {
+                    match e.kind() {
+                        std::io::ErrorKind::TimedOut => {
+                            // debug!("Timeout for {}:{}", self.ip, port); // 可以使用 debug 级别记录超时
+                        },
+                        std::io::ErrorKind::ConnectionRefused => {
+                            // println!("{}:{} connection refused", self.ip, port); // 端口关闭或防火墙拒绝
+                        },
+                        _ => {
+                            println!("error:{} ,{}:{} cannot open", e, self.ip, port);
+                        }
+                    }
+                }
             }
         }
     }
@@ -29,6 +42,7 @@ impl AsyncScanExecutor {
         let socket = std::net::SocketAddr::new(self.ip, port);
         let timeout = std::time::Duration::from_millis(dura);
         let stream = async_io::timeout(timeout, async_std::net::TcpStream::connect(socket)).await?;
+        // 关闭连接(两端的连接，即发送和接收都关闭),会有开销
         stream.shutdown(std::net::Shutdown::Both)?;
         Ok(())
     }
