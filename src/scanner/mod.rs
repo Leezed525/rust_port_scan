@@ -1,4 +1,4 @@
-mod engine;
+pub mod engine;
 mod executor;
 
 use std::collections::HashMap;

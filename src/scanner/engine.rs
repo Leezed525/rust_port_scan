@@ -1,7 +1,8 @@
 use std::net::IpAddr;
+use std::sync::Arc;
 use super::executor::AsyncScanExecutor;
 
-struct AsyncScannerEngine {
+pub struct AsyncScannerEngine {
     // Fields for the scanner engine
     ip: IpAddr, // 扫描的目标IP地址
     begin: u16,
@@ -42,5 +43,17 @@ impl AsyncScannerEngine {
             max_concurrent,
             executors,
         }
+    }
+
+    pub fn run(self, dura: u64) {
+        // 异步执行所有扫描任务
+        let executors = Arc::new(self.executors);
+        let mut tasks = Vec::new();
+        for executor in executors.iter() {
+            tasks.push(executor.execute(dura));
+        }
+
+        // 等待所有任务完成
+        futures::executor::block_on(futures::future::join_all(tasks));
     }
 }
